@@ -92,6 +92,99 @@
       },
       "last_seen": {
         "name": "Zuletzt gesehen"
+      },
+      "rain_today": {
+        "name": "Niederschlag heute"
+      },
+      "rain_1h": {
+        "name": "Niederschlag letzte 60 Minuten",
+        "state_attributes": {
+          "data_since": {
+            "name": "Daten seit"
+          }
+        }
+      },
+      "rain_7d": {
+        "name": "Niederschlag letzte 7 Tage",
+        "state_attributes": {
+          "data_since": {
+            "name": "Daten seit"
+          }
+        }
+      },
+      "rain_30d": {
+        "name": "Niederschlag letzte 30 Tage",
+        "state_attributes": {
+          "data_since": {
+            "name": "Daten seit"
+          }
+        }
+      },
+      "temperature_min_24h": {
+        "name": "Temperatur Min. 24 h",
+        "state_attributes": {
+          "time": {
+            "name": "Zeitpunkt"
+          },
+          "data_since": {
+            "name": "Daten seit"
+          }
+        }
+      },
+      "temperature_max_24h": {
+        "name": "Temperatur Max. 24 h",
+        "state_attributes": {
+          "time": {
+            "name": "Zeitpunkt"
+          },
+          "data_since": {
+            "name": "Daten seit"
+          }
+        }
+      },
+      "humidity_min_24h": {
+        "name": "Luftfeuchtigkeit Min. 24 h",
+        "state_attributes": {
+          "time": {
+            "name": "Zeitpunkt"
+          },
+          "data_since": {
+            "name": "Daten seit"
+          }
+        }
+      },
+      "humidity_max_24h": {
+        "name": "Luftfeuchtigkeit Max. 24 h",
+        "state_attributes": {
+          "time": {
+            "name": "Zeitpunkt"
+          },
+          "data_since": {
+            "name": "Daten seit"
+          }
+        }
+      },
+      "wind_speed_max_24h": {
+        "name": "Windgeschwindigkeit Max. 24 h",
+        "state_attributes": {
+          "time": {
+            "name": "Zeitpunkt"
+          },
+          "data_since": {
+            "name": "Daten seit"
+          }
+        }
+      },
+      "wind_gust_max_24h": {
+        "name": "Windböen Max. 24 h",
+        "state_attributes": {
+          "time": {
+            "name": "Zeitpunkt"
+          },
+          "data_since": {
+            "name": "Daten seit"
+          }
+        }
       }
     }
   }
