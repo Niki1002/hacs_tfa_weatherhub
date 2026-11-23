@@ -1,0 +1,98 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up TFA weatherhub",
+        "description": "Data is uploaded by the weatherhub gateway to the Mobile Alerts cloud and fetched from there.",
+        "data": {
+          "device_ids": "Device IDs",
+          "phone_id": "Phone ID (optional)",
+          "scan_interval": "Polling interval"
+        },
+        "data_description": {
+          "device_ids": "12-digit IDs of the transmitters (printed on the label or shown in the weatherhub app). Separate multiple IDs with commas or new lines.",
+          "phone_id": "Usually leave empty.",
+          "scan_interval": "Transmitters only send about every 7 minutes. The API allows at most 3 requests per minute."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the weatherhub server.",
+      "api_error": "The weatherhub server returned an error (maybe rate limited – wait a moment).",
+      "invalid_device_id": "Invalid device ID: {ids} (expected 12 hex characters, e.g. 0B1234567890).",
+      "no_device_ids": "Please enter at least one device ID.",
+      "device_not_found": "The server returns no data for: {ids}. Is the transmitter paired with the gateway?"
+    },
+    "abort": {
+      "already_configured": "These transmitters are already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "TFA weatherhub options",
+        "description": "Data is uploaded by the weatherhub gateway to the Mobile Alerts cloud and fetched from there.",
+        "data": {
+          "device_ids": "Device IDs",
+          "phone_id": "Phone ID (optional)",
+          "scan_interval": "Polling interval"
+        },
+        "data_description": {
+          "device_ids": "12-digit IDs of the transmitters (printed on the label or shown in the weatherhub app). Separate multiple IDs with commas or new lines.",
+          "phone_id": "Usually leave empty.",
+          "scan_interval": "Transmitters only send about every 7 minutes. The API allows at most 3 requests per minute."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the weatherhub server.",
+      "api_error": "The weatherhub server returned an error (maybe rate limited – wait a moment).",
+      "invalid_device_id": "Invalid device ID: {ids} (expected 12 hex characters, e.g. 0B1234567890).",
+      "no_device_ids": "Please enter at least one device ID.",
+      "device_not_found": "The server returns no data for: {ids}. Is the transmitter paired with the gateway?"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "temperature_2": {
+        "name": "Temperature 2"
+      },
+      "rain_total": {
+        "name": "Total precipitation"
+      },
+      "wind_gust": {
+        "name": "Wind gust"
+      },
+      "wind_bearing": {
+        "name": "Wind bearing"
+      },
+      "wind_direction": {
+        "name": "Wind direction",
+        "state": {
+          "n": "N",
+          "nne": "NNE",
+          "ne": "NE",
+          "ene": "ENE",
+          "e": "E",
+          "ese": "ESE",
+          "se": "SE",
+          "sse": "SSE",
+          "s": "S",
+          "ssw": "SSW",
+          "sw": "SW",
+          "wsw": "WSW",
+          "w": "W",
+          "wnw": "WNW",
+          "nw": "NW",
+          "nnw": "NNW"
+        }
+      },
+      "last_measurement": {
+        "name": "Last measurement"
+      },
+      "last_seen": {
+        "name": "Last seen"
+      }
+    }
+  }
+}
