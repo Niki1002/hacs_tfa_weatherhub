@@ -1,0 +1,12 @@
+{
+  "domain": "tfa_weatherhub",
+  "name": "TFA weatherhub",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://github.com/your-github-user/tfa_weatherhub",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/your-github-user/tfa_weatherhub/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}
