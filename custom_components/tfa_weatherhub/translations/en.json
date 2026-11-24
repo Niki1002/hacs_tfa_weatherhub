@@ -185,6 +185,48 @@
             "name": "Data since"
           }
         }
+      },
+      "rain_temperature": {
+        "name": "Temperature during last rain",
+        "state_attributes": {
+          "rain_start": {
+            "name": "Rain start"
+          },
+          "rain_end": {
+            "name": "Rain end"
+          },
+          "rain_amount": {
+            "name": "Rain amount (mm)"
+          }
+        }
+      },
+      "rain_temperature_min": {
+        "name": "Temperature min during last rain",
+        "state_attributes": {
+          "rain_start": {
+            "name": "Rain start"
+          },
+          "rain_end": {
+            "name": "Rain end"
+          },
+          "rain_amount": {
+            "name": "Rain amount (mm)"
+          }
+        }
+      },
+      "rain_temperature_max": {
+        "name": "Temperature max during last rain",
+        "state_attributes": {
+          "rain_start": {
+            "name": "Rain start"
+          },
+          "rain_end": {
+            "name": "Rain end"
+          },
+          "rain_amount": {
+            "name": "Rain amount (mm)"
+          }
+        }
       }
     }
   }

@@ -22,12 +22,13 @@ from homeassistant.const import (
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_change
 from homeassistant.helpers.restore_state import ExtraStoredData, RestoreEntity
 from homeassistant.util import dt as dt_util
 
-from .const import WIND_DIRECTIONS
+from .const import DOMAIN, WIND_DIRECTIONS
 from .coordinator import WeatherhubConfigEntry, WeatherhubCoordinator
 from .entity import WeatherhubEntity
 
@@ -187,18 +188,40 @@ async def async_setup_entry(
         if not device:
             continue
         measurement = device.get("measurement") or {}
+        is_rain = "r" in measurement
+        # The rain sensor's temperature is shown per rain event instead.
+        skip = RAIN_REPLACED_KEYS if is_rain else set()
         for desc in SENSORS:
             source = device if desc.source == "device" else measurement
-            if desc.field in source:
+            if desc.field in source and desc.key not in skip:
                 entities.append(WeatherhubSensor(coordinator, device_id, desc))
-        if "r" in measurement:
+        if is_rain:
             entities.append(WeatherhubRainTodaySensor(coordinator, device_id))
+            if "t1" in measurement:
+                entities.extend(
+                    WeatherhubRainTemperatureSensor(coordinator, device_id, kind)
+                    for kind in RAIN_TEMP_KINDS
+                )
+            _remove_old_entities(hass, device_id, skip)
         entities.extend(
             WeatherhubHistorySensor(coordinator, device_id, desc)
             for desc in HISTORY_SENSORS
-            if desc.field in measurement
+            if desc.field in measurement and desc.key not in skip
         )
     async_add_entities(entities)
+
+
+RAIN_REPLACED_KEYS = {"temperature", "temperature_min_24h", "temperature_max_24h"}
+
+
+def _remove_old_entities(hass: HomeAssistant, device_id: str, keys: set[str]) -> None:
+    """Remove entities of earlier versions that no longer exist."""
+    registry = er.async_get(hass)
+    for key in keys:
+        if entity_id := registry.async_get_entity_id(
+            "sensor", DOMAIN, f"{device_id}_{key}"
+        ):
+            registry.async_remove(entity_id)
 
 
 class WeatherhubSensor(WeatherhubEntity, SensorEntity):
@@ -517,4 +540,120 @@ class WeatherhubHistorySensor(WeatherhubEntity, SensorEntity, RestoreEntity):
         self._attr_extra_state_attributes = {
             "time": dt_util.utc_from_timestamp(ts).isoformat(),
             "data_since": dt_util.utc_from_timestamp(self._samples[0][0]).isoformat(),
+        }
+
+
+# --------------------------------------------------------------------------
+# Temperature during the last rain event (rain sensor only)
+# --------------------------------------------------------------------------
+
+# A rain event ends when the counter has not increased for this long.
+RAIN_EVENT_GAP = timedelta(hours=1)
+RAIN_TEMP_KINDS = ("rain_temperature", "rain_temperature_min", "rain_temperature_max")
+
+
+@dataclass
+class RainEventData(ExtraStoredData):
+    """Persisted state of the last rain event."""
+
+    last_total: float | None = None
+    last_ts: float | None = None
+    start: float | None = None
+    end: float | None = None
+    amount: float = 0.0
+    temp: float | None = None
+    temp_min: float | None = None
+    temp_max: float | None = None
+
+    def as_dict(self) -> dict[str, Any]:
+        return dict(self.__dict__)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> RainEventData:
+        known = cls.__dataclass_fields__
+        return cls(**{k: v for k, v in data.items() if k in known})
+
+
+class WeatherhubRainTemperatureSensor(WeatherhubEntity, SensorEntity, RestoreEntity):
+    """Temperature (current / min / max) during the last rain event.
+
+    A measurement belongs to rain when the rain counter increased compared to
+    the previous measurement. The value stays unchanged until it rains again.
+    """
+
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+
+    def __init__(self, coordinator: WeatherhubCoordinator, device_id: str, kind: str) -> None:
+        super().__init__(coordinator, device_id, kind)
+        self._kind = kind
+        self._attr_translation_key = kind
+        self._ev = RainEventData()
+
+    @property
+    def extra_restore_state_data(self) -> RainEventData:
+        return self._ev
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        if (extra := await self.async_get_last_extra_data()) is not None:
+            try:
+                self._ev = RainEventData.from_dict(extra.as_dict())
+            except (TypeError, ValueError):
+                self._ev = RainEventData()
+        self._ingest()
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        self._ingest()
+        super()._handle_coordinator_update()
+
+    def _ingest(self) -> None:
+        ev = self._ev
+        m = self.measurement
+        total = _rain(m.get("r"))
+        if total is None:
+            return
+        try:
+            ts = float(m.get("ts"))
+        except (TypeError, ValueError):
+            ts = dt_util.utcnow().timestamp()
+        if ev.last_ts is not None and ts <= ev.last_ts:
+            return  # measurement already processed
+        prev = ev.last_total
+        ev.last_total, ev.last_ts = total, ts
+        if prev is None:
+            return  # first value: no comparison possible yet
+        # counter reset (battery change): treat the new count as rain
+        increase = total - prev if total >= prev else total
+        if increase <= 0:
+            return
+        temp = _temp(m.get("t1"))
+        if ev.end is None or ts - ev.end > RAIN_EVENT_GAP.total_seconds():
+            ev.start, ev.amount = ts, 0.0
+            ev.temp_min = ev.temp_max = None
+        ev.end = ts
+        ev.amount = round(ev.amount + increase, 3)
+        if temp is not None:
+            ev.temp = temp
+            ev.temp_min = temp if ev.temp_min is None else min(ev.temp_min, temp)
+            ev.temp_max = temp if ev.temp_max is None else max(ev.temp_max, temp)
+
+    @property
+    def native_value(self) -> float | None:
+        return {
+            "rain_temperature": self._ev.temp,
+            "rain_temperature_min": self._ev.temp_min,
+            "rain_temperature_max": self._ev.temp_max,
+        }[self._kind]
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        ev = self._ev
+        if ev.start is None:
+            return {}
+        return {
+            "rain_start": dt_util.utc_from_timestamp(ev.start).isoformat(),
+            "rain_end": dt_util.utc_from_timestamp(ev.end).isoformat(),
+            "rain_amount": ev.amount,
         }
